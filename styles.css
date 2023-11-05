@@ -5,3 +5,7 @@ canvas {
 video {
   border: 1px solid blue;
 }
+#detected{
+  margin-left: 65%;
+  
+}

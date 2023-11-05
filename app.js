@@ -4,6 +4,7 @@ let detector = null; // detector object
 let detections = []; // store detection result
 let videoVisibility = true;
 let detecting = false;
+let timeoutId;
 
 // global HTML element
 const toggleVideoEl = document.getElementById('toggleVideoEl');
@@ -65,6 +66,10 @@ function drawResult(object) {
 }
 
 // draw bounding box around the detected object
+// Initialize an empty string to store the detected objects
+// Initialize an empty array to store the detected object labels
+let detectedLabels = [];
+
 function drawBoundingBox(object) {
   // Sets the color used to draw lines.
   stroke('green');
@@ -72,10 +77,24 @@ function drawBoundingBox(object) {
   strokeWeight(4);
   // Disables filling geometry
   noFill();
-  // draw an rectangle
-  // x and y are the coordinates of upper-left corner, followed by width and height
+  // draw a rectangle
+  // x and y are the coordinates of the upper-left corner, followed by width and height
   rect(object.x, object.y, object.width, object.height);
+
+  const detectedLabel = object.label;
+
+  // Check if the label is not already in the array before adding it
+  if (!detectedLabels.includes(detectedLabel)) {
+    // Append the new detected label to the array
+    detectedLabels.push(detectedLabel);
+
+    // Update the innerHTML of the <div> by joining the labels with line breaks
+    document.getElementById('detected').innerHTML = detectedLabels.join('<br>');
+  }
+  
 }
+
+
 
 // draw label of the detected object (inside the box)
 function drawLabel(object) {
@@ -122,6 +141,55 @@ function toggleVideo() {
 function toggleDetecting() {
   if (!video || !detector) return;
   if (!detecting) {
+    detect();
+    toggleDetectingEl.innerText = 'Stop Detecting';
+  } else {
+    toggleDetectingEl.innerText = 'Start Detecting';
+  }
+  detecting = !detecting;
+}
+
+
+
+// Callback function to display "CELLPHONE in list" and set a timeout
+function showCellphoneMessage() {
+  document.getElementById('detected').innerHTML = "CELLPHONE in list";
+  
+  // Set a timeout to clear the message after 5 seconds
+  timeoutId = setTimeout(() => {
+    document.getElementById('detected').innerHTML = detectedLabels.join('<br>');
+  }, 5000);
+}
+
+// In the onDetected function, check if "cell phone" is detected
+function onDetected(error, results) {
+  if (error) {
+    console.error(error);
+  }
+  
+  detections = results;
+  
+  // Check if "cell phone" is detected
+  const isCellphoneDetected = results.some(result => result.label === "cell phone");
+  
+  // If "cell phone" is detected, display the message and clear it after 5 seconds
+  if (isCellphoneDetected) {
+    showCellphoneMessage();
+  }
+  
+  // Keep detecting objects
+  if (detecting) {
+    detect();
+  }
+}
+
+// ...
+
+// In the toggleDetecting function, clear the timeout before starting detection
+function toggleDetecting() {
+  if (!video || !detector) return;
+  if (!detecting) {
+    clearTimeout(timeoutId); // Clear any previous timeout
     detect();
     toggleDetectingEl.innerText = 'Stop Detecting';
   } else {
